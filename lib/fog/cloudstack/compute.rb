@@ -21,6 +21,7 @@ module Fog
       request :attach_volume
       request :authorize_security_group_ingress
       request :change_service_for_virtual_machine
+      request :copy_template
       request :create_account
       request :create_domain
       request :create_load_balancer_rule
