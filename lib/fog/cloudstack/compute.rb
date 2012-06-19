@@ -27,6 +27,7 @@ module Fog
       request :create_load_balancer_rule
       request :create_network
       request :create_port_forwarding_rule
+      request :create_remote_access_vpn
       request :create_security_group
       request :create_ssh_key_pair
       request :create_snapshot
@@ -38,6 +39,7 @@ module Fog
       request :delete_load_balancer_rule
       request :delete_port_forwarding_rule
       request :delete_security_group
+      request :delete_remote_access_vpn
       request :delete_ssh_key_pair
       request :delete_snapshot
       request :delete_snapshot_policies
@@ -77,6 +79,7 @@ module Fog
       request :list_pods
       request :list_port_forwarding_rules
       request :list_public_ip_addresses
+      request :list_remote_access_vpns
       request :list_resource_limits
       request :list_security_groups
       request :list_service_offerings
