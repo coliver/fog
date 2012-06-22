@@ -49,6 +49,7 @@ module Fog
       request :deploy_virtual_machine
       request :destroy_virtual_machine
       request :disable_user
+      request :disassociate_ip_address
       request :enable_user
       request :generate_usage_records
       request :get_vm_password
