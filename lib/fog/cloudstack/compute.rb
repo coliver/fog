@@ -17,6 +17,7 @@ module Fog
       request_path 'fog/cloudstack/requests/compute'
       
       request :acquire_ip_address
+      request :add_vpn_user
       request :assign_to_load_balancer_rule
       request :attach_volume
       request :authorize_security_group_ingress
@@ -93,6 +94,7 @@ module Fog
       request :list_users
       request :list_virtual_machines
       request :list_volumes
+      request :list_vpn_users
       request :list_zones
       request :migrate_virtual_machine
       request :query_async_job_result
@@ -101,6 +103,7 @@ module Fog
       request :register_ssh_key_pair
       request :register_user_keys
       request :remove_from_load_balancer_rule
+      request :remove_vpn_user
       request :reset_password_for_virtual_machine
       request :revoke_security_group_ingress
       request :start_virtual_machine      
