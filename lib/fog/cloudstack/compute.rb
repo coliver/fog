@@ -50,8 +50,10 @@ module Fog
       request :deploy_virtual_machine
       request :destroy_virtual_machine
       request :disable_user
+      request :disable_static_nat
       request :disassociate_ip_address
       request :enable_user
+      request :enable_static_nat
       request :generate_usage_records
       request :get_vm_password
       request :list_accounts
