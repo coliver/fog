@@ -48,6 +48,7 @@ module Fog
       request :delete_volume
       request :detach_volume
       request :deploy_virtual_machine
+      request :destroy_router
       request :destroy_virtual_machine
       request :disable_user
       request :disable_static_nat
@@ -85,6 +86,7 @@ module Fog
       request :list_public_ip_addresses
       request :list_remote_access_vpns
       request :list_resource_limits
+      request :list_routers
       request :list_security_groups
       request :list_service_offerings
       request :list_snapshots
@@ -100,6 +102,7 @@ module Fog
       request :list_zones
       request :migrate_virtual_machine
       request :query_async_job_result
+      request :reboot_router
       request :reboot_virtual_machine
       request :recover_virtual_machine
       request :register_ssh_key_pair
@@ -108,8 +111,10 @@ module Fog
       request :remove_vpn_user
       request :reset_password_for_virtual_machine
       request :revoke_security_group_ingress
+      request :start_router
       request :start_virtual_machine      
       request :stop_virtual_machine
+      request :stop_router
       request :update_account
       request :update_domain
       request :update_user
