@@ -39,6 +39,7 @@ module Fog
       request :delete_domain
       request :delete_load_balancer_rule
       request :delete_port_forwarding_rule
+      request :delete_network
       request :delete_security_group
       request :delete_remote_access_vpn
       request :delete_ssh_key_pair
@@ -109,6 +110,7 @@ module Fog
       request :register_user_keys
       request :remove_from_load_balancer_rule
       request :remove_vpn_user
+      request :restart_network
       request :reset_password_for_virtual_machine
       request :revoke_security_group_ingress
       request :start_router
@@ -117,6 +119,7 @@ module Fog
       request :stop_router
       request :update_account
       request :update_domain
+      request :update_network
       request :update_user
       request :update_resource_count
       request :update_virtual_machine
