@@ -25,6 +25,7 @@ module Fog
       request :copy_template
       request :create_account
       request :create_domain
+      request :create_egress_firewall_rule
       request :create_firewall_rule
       request :create_ip_forwarding_rule
       request :create_load_balancer_rule
@@ -39,6 +40,7 @@ module Fog
       request :create_volume
       request :delete_account
       request :delete_domain
+      request :delete_egress_firewall_rule
       request :delete_firewall_rule
       request :delete_ip_forwarding_rule
       request :delete_load_balancer_rule
@@ -73,6 +75,7 @@ module Fog
       request :list_capacity
       request :list_domains
       request :list_domain_children
+      request :list_egress_firewall_rules
       request :list_events
       request :list_external_firewalls
       request :list_external_load_balancers
