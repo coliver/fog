@@ -21,6 +21,7 @@ module Fog
       request :assign_to_load_balancer_rule
       request :attach_volume
       request :authorize_security_group_ingress
+      request :authorize_security_group_egress
       request :change_service_for_virtual_machine
       request :copy_template
       request :create_account
@@ -122,6 +123,7 @@ module Fog
       request :restart_network
       request :reset_password_for_virtual_machine
       request :revoke_security_group_ingress
+      request :revoke_security_group_egress
       request :start_router
       request :start_virtual_machine      
       request :stop_virtual_machine
