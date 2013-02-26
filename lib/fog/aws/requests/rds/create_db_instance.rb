@@ -9,15 +9,15 @@ module Fog
         # http://docs.amazonwebservices.com/AmazonRDS/latest/APIReference/API_CreateDBInstance.html
         # ==== Parameters
         # * DBInstanceIdentifier <~String> - name of the db instance to modify
-        #                                     
+        #
         # * AllocatedStorage  <~Integer> Storage space, in GB
-        # * AutoMinorVersionUpgrade <~Boolean> Indicates that minor version upgrades will be applied automatically to the DB Instance during the maintenance window 
+        # * AutoMinorVersionUpgrade <~Boolean> Indicates that minor version upgrades will be applied automatically to the DB Instance during the maintenance window
         # * AvailabilityZone <~String> The availability zone to create the instance in
         # * BackupRetentionPeriod  <~Integer> 0-8 The number of days to retain automated backups.
         # * DBInstanceClass <~String> The new compute and memory capacity of the DB Instance
         # * DBName <~String> The name of the database to create when the DB Instance is created
-        # * DBParameterGroupName <~String> The name of the DB Parameter Group to apply to this DB Instance  
-        # * DBSecurityGroups <~Array> A list of DB Security Groups to authorize on this DB Instance 
+        # * DBParameterGroupName <~String> The name of the DB Parameter Group to apply to this DB Instance
+        # * DBSecurityGroups <~Array> A list of DB Security Groups to authorize on this DB Instance
         # * Engine <~String> The name of the database engine to be used for this instance.
         # * EngineVersion <~String> The version number of the database engine to use.
         # * MasterUsername <~String> The db master user
@@ -26,15 +26,16 @@ module Fog
         # * Port <~Integer> The port number on which the database accepts connections.
         # * PreferredBackupWindow <~String> The daily time range during which automated backups are created if automated backups are enabled
         # * PreferredMaintenanceWindow <~String> The weekly time range (in UTC) during which system maintenance can occur, which may result in an outage
+        # * DBSubnetGroupName <~String> The name, if any, of the VPC subnet for this RDS instance
         # ==== Returns
         # * response<~Excon::Response>:
         #   * body<~Hash>:
         def create_db_instance(db_name, options={})
-          
+
           if security_groups = options.delete('DBSecurityGroups')
             options.merge!(Fog::AWS.indexed_param('DBSecurityGroups.member.%d', [*security_groups]))
           end
-    
+
           request({
             'Action'  => 'CreateDBInstance',
             'DBInstanceIdentifier' => db_name,
@@ -58,7 +59,7 @@ module Fog
             #return response
             raise Fog::AWS::RDS::IdentifierTaken.new("DBInstanceAlreadyExists #{response.body.to_s}")
           end
-          
+
           # These are the required parameters according to the API
           required_params = %w{AllocatedStorage DBInstanceClass Engine MasterUserPassword MasterUsername }
           required_params.each do |key|
@@ -72,7 +73,7 @@ module Fog
               raise Fog::AWS::RDS::NotFound.new("The request must contain the parameter #{key}")
             end
           end
-          
+
           data =
               {
                  "DBInstanceIdentifier"=> db_name,
@@ -80,19 +81,19 @@ module Fog
                  "InstanceCreateTime" => nil,
                  "AutoMinorVersionUpgrade"=>true,
                  "Endpoint"=>{},
-                 "ReadReplicaDBInstanceIdentifiers"=>['bla'],
+                 "ReadReplicaDBInstanceIdentifiers"=>[],
                  "PreferredMaintenanceWindow"=>"mon:04:30-mon:05:00",
                  "Engine"=> options["Engine"],
-                 "EngineVersion"=> options["EngineVersion"] || "5.1.57",
+                 "EngineVersion"=> options["EngineVersion"] || "5.5.12",
                  "PendingModifiedValues"=>{"MasterUserPassword"=>"****"}, # This clears when is available
-                 "MultiAZ"=>false,
+                 "MultiAZ"=> !!options['MultiAZ'],
                  "MasterUsername"=> options["MasterUsername"],
                  "DBInstanceClass"=> options["DBInstanceClass"],
                  "DBInstanceStatus"=>"creating",
                  "BackupRetentionPeriod"=> options["BackupRetentionPeriod"] || 1,
                  "AllocatedStorage"=> options["AllocatedStorage"],
                  "DBParameterGroups"=> # I think groups should be in the self.data method
-                          [{"DBParameterGroupName"=>"default.mysql5.1",
+                          [{"DBParameterGroupName"=>"default.mysql5.5",
                             "ParameterApplyStatus"=>"in-sync"}],
                  "DBSecurityGroups"=>
                           [{"Status"=>"active", 
@@ -101,10 +102,11 @@ module Fog
                  "PreferredBackupWindow"=>"08:00-08:30",
 #                 "ReadReplicaSourceDBInstanceIdentifier" => nil,
 #                 "LatestRestorableTime" => nil,
-                 "AvailabilityZone" => options["AvailabilityZone"]
+                 "AvailabilityZone" => options["AvailabilityZone"],
+                 "DBSubnetGroupName" => options["DBSubnetGroupName"]
              }
-           
-          
+
+
           self.data[:servers][db_name] = data
           response.body = {
             "ResponseMetadata"=>{ "RequestId"=> Fog::AWS::Mock.request_id },
@@ -113,6 +115,8 @@ module Fog
           response.status = 200
           # This values aren't showed at creating time but at available time
           self.data[:servers][db_name]["InstanceCreateTime"] = Time.now
+          self.data[:tags] ||= {}
+          self.data[:tags][db_name] = {}
           response
         end
 

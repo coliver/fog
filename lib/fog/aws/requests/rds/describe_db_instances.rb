@@ -21,7 +21,7 @@ module Fog
           if opts[:max_records]
             params['MaxRecords'] = opts[:max_records]
           end
-          
+
           request({
             'Action'  => 'DescribeDBInstances',
             :parser   => Fog::Parsers::AWS::RDS::DescribeDBInstances.new
@@ -35,7 +35,7 @@ module Fog
         def describe_db_instances(identifier=nil, opts={})
           response = Excon::Response.new
           server_set = []
-          if identifier   
+          if identifier
             if server = self.data[:servers][identifier]
               server_set << server
             else
@@ -44,44 +44,41 @@ module Fog
           else
             server_set = self.data[:servers].values
           end
-          
+
           server_set.each do |server|
              case server["DBInstanceStatus"]
              when "creating"
-                 if Time.now - server['InstanceCreateTime'] >= Fog::Mock.delay * 2
-                   region = "us-east-1"
-                   server["DBInstanceStatus"] = "available"
-                   server["AvailabilityZone"] = region + 'a'
-                   server["Endpoint"] = {"Port"=>3306, 
-                                         "Address"=> Fog::AWS::Mock.rds_address(server["DBInstanceIdentifier"],region) }
-                   server["PendingModifiedValues"] = {}
-                 end
-              when "rebooting" # I don't know how to show rebooting just once before it changes to available
-                # it applies pending modified values
-                if server["PendingModifiedValues"]
+               if Time.now - server['InstanceCreateTime'] >= Fog::Mock.delay * 2
+                 region = "us-east-1"
+                 server["DBInstanceStatus"] = "available"
+                 server["AvailabilityZone"] ||= region + 'a'
+                 server["Endpoint"] = {"Port"=>3306,
+                                       "Address"=> Fog::AWS::Mock.rds_address(server["DBInstanceIdentifier"],region) }
+                 server["PendingModifiedValues"] = {}
+               end
+              when "rebooting"
+                if Time.now - self.data[:reboot_time] >= Fog::Mock.delay
+                  # apply pending modified values
                   server.merge!(server["PendingModifiedValues"])
                   server["PendingModifiedValues"] = {}
-                  self.data[:tmp] ||= Time.now + Fog::Mock.delay * 2
-                  if self.data[:tmp] <= Time.now
-                    server["DBInstanceStatus"] = 'available'
-                    self.data.delete(:tmp)
-                  end
+
+                  server["DBInstanceStatus"] = 'available'
+                  self.data.delete(:reboot_time)
                 end
               when "modifying"
                 # TODO there are some fields that only applied after rebooting
-                if server["PendingModifiedValues"]
+                if Time.now - self.data[:modify_time] >= Fog::Mock.delay
                   server.merge!(server["PendingModifiedValues"])
                   server["PendingModifiedValues"] = {}
                   server["DBInstanceStatus"] = 'available'
                 end
               when "available" # I'm not sure if amazon does this
-                if server["PendingModifiedValues"]
+                unless server["PendingModifiedValues"].empty?
                   server["DBInstanceStatus"] = 'modifying'
                 end
-                  
-             end 
+             end
           end
-          
+
           response.status = 200
           response.body = {
             "ResponseMetadata"=>{ "RequestId"=> Fog::AWS::Mock.request_id },
@@ -89,7 +86,7 @@ module Fog
           }
           response
         end
-        
+
 
       end
     end

@@ -1,13 +1,14 @@
-require File.expand_path(File.join(File.dirname(__FILE__), '..', 'aws'))
+require 'fog/aws'
 
 module Fog
   module AWS
     class EMR < Fog::Service
+      extend Fog::AWS::CredentialFetcher::ServiceMethods
 
       class IdentifierTaken < Fog::Errors::Error; end
 
       requires :aws_access_key_id, :aws_secret_access_key
-      recognizes :region, :host, :path, :port, :scheme, :persistent
+      recognizes :region, :host, :path, :port, :scheme, :persistent, :use_iam_profile, :aws_session_token, :aws_credentials_expire_at
 
       request_path 'fog/aws/requests/emr'
 
@@ -42,7 +43,7 @@ module Fog
       end
 
       class Real
-
+        include Fog::AWS::CredentialFetcher::ConnectionMethods
         # Initialize connection to EMR
         #
         # ==== Notes
@@ -57,35 +58,17 @@ module Fog
         #
         # ==== Parameters
         # * options<~Hash> - config arguments for connection.  Defaults to {}.
-        #   * region<~String> - optional region to use, in ['eu-west-1', 'us-east-1', 'us-west-1', 'us-west-2', 'ap-southeast-1']
+        #   * region<~String> - optional region to use. For instance, in 'eu-west-1', 'us-east-1' and etc.
         #
         # ==== Returns
         # * EMR object with connection to AWS.
         def initialize(options={})
-          @aws_access_key_id      = options[:aws_access_key_id]
-          @aws_secret_access_key  = options[:aws_secret_access_key]
+          @use_iam_profile = options[:use_iam_profile]
+          setup_credentials(options)
           @connection_options     = options[:connection_options] || {}
-          @hmac = Fog::HMAC.new('sha256', @aws_secret_access_key)
 
           options[:region] ||= 'us-east-1'
-          @host = options[:host] || case options[:region]
-           when 'ap-northeast-1'
-            'elasticmapreduce.ap-northeast-1.amazonaws.com'
-          when 'ap-southeast-1'
-            'elasticmapreduce.ap-southeast-1.amazonaws.com'
-          when 'eu-west-1'
-            'elasticmapreduce.eu-west-1.amazonaws.com'
-          when 'us-east-1'
-            'elasticmapreduce.us-east-1.amazonaws.com'
-          when 'us-west-1'
-            'elasticmapreduce.us-west-1.amazonaws.com'
-          when 'us-west-2'
-            'elasticmapreduce.us-west-2.amazonaws.com'
-          when 'sa-east-1'
-            'elasticmapreduce.sa-east-1.amazonaws.com'
-          else
-            raise ArgumentError, "Unknown region: #{options[:region].inspect}"
-          end
+          @host = options[:host] || "elasticmapreduce.#{options[:region]}.amazonaws.com"
           @path       = options[:path]        || '/'
           @persistent = options[:persistent]  || false
           @port       = options[:port]        || 443
@@ -100,7 +83,18 @@ module Fog
 
         private
 
+        def setup_credentials(options)
+          @aws_access_key_id      = options[:aws_access_key_id]
+          @aws_secret_access_key  = options[:aws_secret_access_key]
+          @aws_session_token      = options[:aws_session_token]
+          @aws_credentials_expire_at = options[:aws_credentials_expire_at]
+
+          @hmac = Fog::HMAC.new('sha256', @aws_secret_access_key)
+        end
+
         def request(params)
+          refresh_credentials_if_expired
+
           idempotent  = params.delete(:idempotent)
           parser      = params.delete(:parser)
 
@@ -108,6 +102,7 @@ module Fog
             params,
             {
               :aws_access_key_id  => @aws_access_key_id,
+              :aws_session_token  => @aws_session_token,
               :hmac               => @hmac,
               :host               => @host,
               :path               => @path,
@@ -126,20 +121,8 @@ module Fog
               :method     => 'POST',
               :parser     => parser
             })
-          rescue Excon::Errors::HTTPStatusError => error
-            if match = error.message.match(/<Code>(.*)<\/Code>[\s\\\w]+<Message>(.*)<\/Message>/m)
-              # case match[1].split('.').last
-              # when 'DBInstanceNotFound', 'DBParameterGroupNotFound', 'DBSnapshotNotFound', 'DBSecurityGroupNotFound'
-              #   raise Fog::AWS::RDS::NotFound.slurp(error, match[2])
-              # when 'DBParameterGroupAlreadyExists'
-              #   raise Fog::AWS::RDS::IdentifierTaken.slurp(error, match[2])
-              # else
-              #   raise
-              # end
-              raise
-            else
-              raise
-            end
+          rescue Excon::Errors::HTTPStatusError
+            raise
           end
 
           response

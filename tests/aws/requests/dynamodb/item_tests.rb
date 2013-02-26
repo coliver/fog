@@ -37,10 +37,31 @@ Shindo.tests('Fog::AWS[:dynamodb] | item requests', ['aws']) do
     }
 
     tests("#batch_get_item({'#{@table_name}' => {'Keys' => [{'HashKeyElement' => {'S' => 'key'}}]}})").formats(@batch_get_item_format) do
+      pending if Fog.mocking?
       Fog::AWS[:dynamodb].batch_get_item(
         {@table_name => {'Keys' => [{'HashKeyElement' => {'S' => 'key'}}]}}
       ).body
     end
+
+    @batch_put_item_format = {
+      'Responses'=> {
+        @table_name => {
+          'ConsumedCapacityUnits' => Float}
+      },
+      'UnprocessedItems'=> {}
+    }
+
+    tests("#batch_put_item({ '#{@table_name}' => [{ 'PutRequest' => { 'Item' =>
+            { 'HashKeyElement' => { 'S' => 'key' }, 'RangeKeyElement' => { 'S' => 'key' }}}}]})"
+         ).formats(@batch_put_item_format) do
+            pending if Fog.mocking?
+            Fog::AWS[:dynamodb].batch_put_item(
+              {@table_name => [{'PutRequest'=> {'Item'=>
+                {'HashKeyElement' => { 'S' => 'key' },
+                 'RangeKeyElement' => { 'S' => 'key' }
+                }}}]}
+            ).body
+         end
 
     @get_item_format = {
       'ConsumedCapacityUnits' => Float,
@@ -58,6 +79,29 @@ Shindo.tests('Fog::AWS[:dynamodb] | item requests', ['aws']) do
     tests("#get_item('#{@table_name}', {'HashKeyElement' => {'S' => 'notakey'}})").formats('ConsumedCapacityUnits' => Float) do
       pending if Fog.mocking?
       Fog::AWS[:dynamodb].get_item(@table_name, {'HashKeyElement' => {'S' => 'notakey'}}).body
+    end
+
+    @query_format = {
+      'ConsumedCapacityUnits' => Float,
+      'Count'                 => Integer,
+      'Items'                 => [{
+        'key'   => { 'S' => String },
+        'value' => { 'S' => String }
+      }],
+      'LastEvaluatedKey'      => NilClass
+    }
+
+    tests("#query('#{@table_name}', {'S' => 'key'}").formats(@query_format) do
+      pending if Fog.mocking?
+      pending # requires a table with range key
+      Fog::AWS[:dynamodb].query(@table_name, {'S' => 'key'}).body
+    end
+
+    @scan_format = @query_format.merge('ScannedCount' => Integer)
+
+    tests("scan('#{@table_name}')").formats(@scan_format) do
+      pending if Fog.mocking?
+      Fog::AWS[:dynamodb].scan(@table_name).body
     end
 
     tests("#delete_item('#{@table_name}', {'HashKeyElement' => {'S' => 'key'}})").formats('ConsumedCapacityUnits' => Float) do

@@ -1,4 +1,4 @@
-require File.expand_path(File.join(File.dirname(__FILE__), '..', 'rackspace'))
+require 'fog/rackspace'
 
 module Fog
   module Rackspace
@@ -29,6 +29,9 @@ module Fog
       model :access_rule
 
       request_path 'fog/rackspace/requests/load_balancers'
+      request :get_ssl_termination
+      request :set_ssl_termination
+      request :remove_ssl_termination
       request :create_load_balancer
       request :get_load_balancer
       request :list_load_balancers
@@ -47,6 +50,8 @@ module Fog
       request :list_algorithms
       request :get_connection_logging
       request :set_connection_logging
+      request :get_content_caching
+      request :set_content_caching
       request :create_access_rule
       request :list_access_rules
       request :delete_access_rule
@@ -97,7 +102,6 @@ module Fog
         include Shared
 
         def initialize(options={})
-          require 'multi_json'
           @rackspace_api_key = options[:rackspace_api_key]
           @rackspace_username = options[:rackspace_username]
           @rackspace_auth_url = options[:rackspace_auth_url]
@@ -106,7 +110,7 @@ module Fog
           uri = URI.parse(options[:rackspace_lb_endpoint] || DFW_ENDPOINT)
           @host       = uri.host
           @persistent = options[:persistent] || false
-          @path       = uri.path
+          @path       = uri.path.end_with?('/') ? uri.path.chop : uri.path
           @port       = uri.port
           @scheme     = uri.scheme
 
@@ -136,7 +140,7 @@ module Fog
             raise ServiceError.slurp error
           end
           unless response.body.empty?
-            response.body = MultiJson.decode(response.body)
+            response.body = Fog::JSON.decode(response.body)
           end
           response
         end
@@ -152,7 +156,6 @@ module Fog
           account_id = credentials['X-Server-Management-Url'].match(/.*\/([\d]+)$/)[1]
           @path = "#{@path}/#{account_id}"
         end
-
       end
     end
   end

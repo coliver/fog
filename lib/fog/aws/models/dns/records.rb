@@ -28,15 +28,13 @@ module Fog
           options[:identifier] ||= identifier
           options.delete_if {|key, value| value.nil?}
 
-          data = connection.list_resource_record_sets(zone.id, options).body
+          data = service.list_resource_record_sets(zone.id, options).body
           # NextRecordIdentifier is completely absent instead of nil, so set to nil, or iteration breaks.
           data['NextRecordIdentifier'] = nil unless data.has_key?('NextRecordIdentifier')
 
           merge_attributes(data.reject {|key, value| !['IsTruncated', 'MaxItems', 'NextRecordName', 'NextRecordType', 'NextRecordIdentifier'].include?(key)})
           # leave out the default, read only records
-          # data = data['ResourceRecordSets'].reject {|record| ['NS', 'SOA'].include?(record['Type'])}
-          # AMT: these are not read only
-          data = data['ResourceRecordSets']
+          data = data['ResourceRecordSets'].reject {|record| ['NS', 'SOA'].include?(record['Type'])}
           load(data)
         end
 
@@ -46,6 +44,11 @@ module Fog
         def all!
           data = []
 
+          merge_attributes({'NextRecordName' => nil,
+                            'NextRecordType' => nil,
+                            'NextRecordIdentifier' => nil,
+                            'IsTruncated' => nil})
+
           begin
             options = {
                 :name => next_record_name,
@@ -54,7 +57,7 @@ module Fog
             }
             options.delete_if {|key, value| value.nil?}
 
-            batch = connection.list_resource_record_sets(zone.id, options).body
+            batch = service.list_resource_record_sets(zone.id, options).body
             # NextRecordIdentifier is completely absent instead of nil, so set to nil, or iteration breaks.
             batch['NextRecordIdentifier'] = nil unless batch.has_key?('NextRecordIdentifier')
 
@@ -89,7 +92,7 @@ module Fog
           }
           options.delete_if {|key, value| value.nil?}
 
-          data = connection.list_resource_record_sets(zone.id, options).body
+          data = service.list_resource_record_sets(zone.id, options).body
           # Get first record
           data = data['ResourceRecordSets'].shift
 

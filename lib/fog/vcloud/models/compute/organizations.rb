@@ -11,15 +11,17 @@ module Fog
         undef_method :create
 
         def all
-          data = connection.login.body[:Org].select { |org| org[:type] == "application/vnd.vmware.vcloud.org+xml" }
-          data.each { |org| org.delete_if { |key, value| [:rel].include?(key) } }
+          raw_orgs = if service.version == '1.0'
+            service.login
+          else
+            service.request(service.basic_request_params("#{service.base_path_url}/org/"))
+          end
+          data = raw_orgs.body[:Org]
           load(data)
         end
 
         def get(uri)
-          if data = connection.get_organization(uri)
-            new(data.body)
-          end
+          service.get_organization(uri)
         rescue Fog::Errors::NotFound
           nil
         end
