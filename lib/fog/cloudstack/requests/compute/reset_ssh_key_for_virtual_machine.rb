@@ -7,9 +7,9 @@ module Fog
         #
         # http://download.cloud.com/releases/3.0.6/api_3.0.6/domain_admin/resetSSHKeyForVirtualMachine.html
         def reset_ssh_key_for_virtual_machine(options)
-          options.merge! = {
+          options.merge!(
             'command' => 'resetSSHKeyForVirtualMachine'
-          }
+          )
           
           request(options)
         end
