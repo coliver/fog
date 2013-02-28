@@ -146,6 +146,7 @@ module Fog
       request :remove_vpn_user
       request :restart_network
       request :reset_password_for_virtual_machine
+      request :reset_ssh_key_for_virtual_machine
       request :revoke_security_group_ingress
       request :revoke_security_group_egress
       request :start_router
